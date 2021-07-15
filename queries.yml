@@ -1,0 +1,204 @@
+---
+gp_uptime:
+  query: "SELECT COALESCE(MAX(EXTRACT(EPOCH FROM now() - pg_postmaster_start_time))::float,0)  as start_time_seconds from pg_postmaster_start_time()"
+  metrics:
+    - start_time_seconds:
+        usage: "GAUGE"
+        description: "Time at which postmaster started"
+
+gp_connection:
+  query: "SELECT usename as username, count(1) AS sum FROM pg_stat_activity GROUP BY usename;"
+  metrics:
+    - username:
+        usage: "LABEL"
+        description: "User Name"
+    - sum:
+        usage: "GAUGE"
+        description: "Count connection to database"
+
+gp_total_segment:
+  query: "SELECT count(1) FROM gp_segment_configuration where content<>-1"
+  metrics:
+    - count:
+        usage: "GAUGE"
+        description: "Count total segments"
+
+gp_total_primaris:
+  query: "SELECT count(1) FROM gp_segment_configuration where preferred_role='p' and content<>-1"
+  metrics:
+    - count:
+        usage: "GAUGE"
+        description: "Count total primaris"
+
+gp_mirror_as_primaris:
+  query: "SELECT count(1) FROM gp_segment_configuration where preferred_role='m' and role='p' and content<>-1"
+  metrics:
+    - count:
+        usage: "GAUGE"
+        description: "Count mirror as primaris"
+
+gp_segment_up:
+  query: "SELECT count(1) FROM gp_segment_configuration where status ='u' and content<>-1"
+  metrics:
+    - count:
+        usage: "GAUGE"
+        description: "Count segment up"
+
+gp_resgroup_status:
+  query: "select rsgname, num_running, num_queueing, num_executed from gp_toolkit.gp_resgroup_status;"
+  metrics:
+    - rsgname:
+        usage: "LABEL"
+        description: "Name resource group"
+    - num_running:
+        usage: "GAUGE"
+        description: "The number of transactions currently executing"
+    - num_queueing:
+        usage: "GAUGE"
+        description: "The number of currently queued transactions"
+    - num_executed:
+        usage: "COUNTER"
+        description: "The number of total executed transactions"
+
+gp_max_tx:
+  query: "SELECT COALESCE(MAX(EXTRACT(EPOCH FROM now() - xact_start))::float,0) AS max_tx_duration FROM pg_stat_activity WHERE datname = 'adb'"
+  metrics:
+    - max_tx_duration:
+        usage: "COUNTER"
+        description: "Duration transaction"
+
+gp_locks:
+  query: "SELECT mode, (count(1)) FROM pg_locks GROUP BY mode"
+  metrics:
+    - mode:
+        usage: "LABEL"
+        description: "Locks mode"
+    - count:
+        usage: "COUNTER"
+        description: "Count locks in db"
+
+gp_resgroup_status_per_host:
+  query: "SELECT rsgname, hostname, cpu, memory_used, memory_available, memory_quota_used, memory_quota_available, memory_shared_used, memory_shared_available FROM gp_toolkit.gp_resgroup_status_per_host;"
+  metrics:
+    - rsgname:
+        usage: "LABEL"
+        description: "Resource Group Name"
+    - hostname:
+        usage: "LABEL"
+        description: "Hostname"
+    - cpu:
+        usage: "GAUGE"
+        description: "cpu"
+    - memory_used:
+        usage: "GAUGE"
+        description: "memory used"
+    - memory_available:
+        usage: "GAUGE"
+        description: "memory available"
+    - memory_quota_used:
+        usage: "GAUGE"
+        description: "memory quota used"
+    - memory_quota_available:
+        usage: "GAUGE"
+        description: "memory quota available"
+    - memory_shared_used:
+        usage: "GAUGE"
+        description: "memory shared used"
+    - memory_shared_available:
+        usage: "GAUGE"
+        description: "memory shared available"
+
+gp_resgroup_config:
+  query: "select groupname as rsgname,
+        concurrency,
+        cpu_rate_limit::numeric /100 as cpu_rate_limit,
+        memory_limit::numeric/100 as memory_limit,
+        memory_shared_quota::numeric/100 as memory_shared_quota,
+        memory_spill_ratio::numeric/100 as memory_spill_ratio,
+        (select setting from pg_settings where name = 'gp_resource_group_cpu_limit')  as global_cpu_limit,
+        (select setting from pg_settings where name = 'gp_resource_group_memory_limit') as global_memory_limit
+        from gp_toolkit.gp_resgroup_config;"
+  metrics:
+    - rsgname:
+        usage: "LABEL"
+        description: "Resource Group Name"
+    - concurrency:
+        usage: "GAUGE"
+        description: "Concurrency"
+    - cpu_rate_limit:
+        usage: "GAUGE"
+        description: "Cpu rate limit"
+    - memory_limit:
+        usage: "GAUGE"
+        description: "Memory limit"
+    - memory_shared_quota:
+        usage: "GAUGE"
+        description: "Memory shared quota"
+    - memory_spill_ratio:
+        usage: "GAUGE"
+        description: "Memory spill ratio"
+    - global_cpu_limit:
+        usage: "GAUGE"
+        description: "Global CPU limit for resource group"
+    - global_memory_limit:
+        usage: "GAUGE"
+        description: "Global memory limit for resource group"
+
+#Only if gpperfmon installed, need to run in gpperfmon database!
+gp_queries_history:
+  query: "SELECT username, queries, time_elapsed, rows_out_sum as rows_out, cpu_elapsed_sum as cpu_elapsed, skew_cpu_sum as skew_cpu, skew_rows_sum as skew_rows FROM queries_history_metrics;"
+  metrics:
+    - username:
+        usage: "LABEL"
+        description: "User Name"
+    - queries:
+        usage: "GAUGE"
+        description: "Queries count"
+    - time_elapsed:
+        usage: "GAUGE"
+        description: "Queries time elapsed"
+    - rows_out:
+        usage: "GAUGE"
+        description: "Queries rows out"
+    - cpu_elapsed:
+        usage: "GAUGE"
+        description: "Queries cpu_elapsed"
+    - skew_cpu:
+        usage: "GAUGE"
+        description: "Queries skew cpu"
+    - skew_rows:
+        usage: "GAUGE"
+        description: "Queries skew rows"
+
+
+gp_total_table:
+  query: "SELECT count(1) FROM pg_class c WHERE c.relkind = ANY (ARRAY['r'::char, 'v'::char, 'f'::char])"
+  metrics:
+    - count:
+        usage: "COUNTER"
+        description: "Total table in adb"
+
+gp_total_schema:
+  query: "SELECT count(1) from pg_namespace"
+  metrics:
+    - count:
+        usage: "COUNTER"
+        description: "Total schema in adb"
+
+gp_bloat:
+  query: "SELECT (sum(bdirelpages)- sum (bdiexppages)) as bloat FROM gp_toolkit.gp_bloat_diag"
+  metrics:
+    - count:
+        usage: "COUNTER"
+        description: "Total bloat in adb"
+
+gp_stats_missing:
+  query: "select count(distinct smischema) as schemas, count(1) as tables
+        from gp_toolkit.gp_stats_missing;"
+  metrics:
+    - schemas:
+        usage: "COUNTER"
+        description: "Schemas with lost statistics"
+    - tables:
+        usage: "COUNTER"
+        description: "Tables with lost statistics"
