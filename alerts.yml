@@ -1,0 +1,109 @@
+---
+  - name: greenplum
+    rules:
+    # GP System alerts
+    - alert: gp-up
+        expr: pg_up{instance=~".*mdw.*"} == 0
+        for: 1m
+        labels:
+        severity: critical
+        service: Greenplum
+        annotations:
+        summary: "Unable to connect to the server at [[ $labels.instance ]]"
+        description: "Unable to connect to the server at [[ $labels.instance ]]"
+        dashboard: "http://grafana.lmru.tech/"
+    # GP database alerts
+    - alert: gp-resgroup-queue
+        expr: gp_resgroup_status_num_queueing{cluster="greenplum_prod"} > 5
+        for: 15m
+        labels:
+        severity: info
+        service: Greenplum
+        annotations:
+        summary: "GP resgroup queueing at [[ $labels.cluster ]]"
+        description: "[[ $value ]] query in [[ $labels.rsgname]] resgroup queueing at [[ $labels.cluster]]"
+        dashboard: "http://grafana.lmru.tech/d/sRH-5RoWk/greenplum"
+    - alert: gp-segment-down
+        expr: gp_total_segment_count{cluster="greenplum_prod"} - gp_segment_up_count{cluster="greenplum_prod"} > 0
+        for: 1m
+        labels:
+        severity: critical
+        service: Greenplum
+        annotations:
+        summary: "GP segment is down in [[ $labels.cluster ]]"
+        description: "[[ $value ]] GP segment is down in [[ $labels.cluster ]]"
+        dashboard: "http://grafana.lmru.tech/d/sRH-5RoWk/greenplum"
+    - alert: gp-max-connections
+        expr: gp_connection_sum{instance=~".*-mdw.*"} * 100 /
+            gp_max_connections_limit{instance=~".*-mdw.*"} - gp_superuser_connections_limit{instance=~".*-mdw.*"} >= 90
+        for: 1m
+        labels:
+        severity: high
+        service: Greenplum
+        annotations:
+        summary: "Number of connections is too high at [[ $labels.instance ]]"
+        description: "Сonnection count [[ $value ]] equal or more than 90% of max_connections at [[ $labels.instance ]]"
+        dashboard: "http://grafana.lmru.tech/d/sRH-5RoWk/greenplum"
+    - alert: gp-max-connections-reached
+        expr: gp_connection_sum{instance=~".*-mdw.*"} ==
+            gp_max_connections_limit{instance=~".*-mdw.*"} - gp_superuser_connections_limit{instance=~".*-mdw.*"}
+        for: 1m
+        labels:
+        severity: critical
+        service: Greenplum
+        annotations:
+        summary: "Сonnection limit reached at [[ $labels.instance ]]"
+        description: "Сonnection count [[ $value ]] limit is reached at [[ $labels.instance ]]"
+        dashboard: "http://grafana.lmru.tech/d/sRH-5RoWk/greenplum"
+    - alert: gp-wait-ses-count
+        expr: gp_wait_ses_count{instance=~".*-mdw.*"} > 0
+        for: 5m
+        labels:
+        severity: normal
+        service: Greenplum
+        annotations:
+        summary: "Waitng sessions at [[ $labels.instance ]]"
+        description: "There are [[ $value ]] sessions waiting for a lock at [[ $labels.instance ]]"
+        dashboard: "http://grafana.lmru.tech/d/sRH-5RoWk/greenplum"
+    - alert: gp-checkpoint-frequency
+        expr: increase(gp_checkpoint_count_normal{instance=~".*-mdw.*"} [5m]) + increase(gp_checkpoint_count_forced{instance=~".*-mdw.*"} [5m]) > 5
+        for: 5m
+        labels:
+        severity: normal
+        service: Greenplum
+        annotations:
+        summary: "Checkpoints are too frequent at [[ $labels.instance ]]"
+        description: "Scheduled/Requested checkpoints occurs too frequent at [[ $labels.instance ]]"
+        dashboard: "http://grafana.lmru.tech/d/sRH-5RoWk/greenplum"
+    # Blackbox exporter alerts
+    - alert: gp-connection-is-lost
+        expr: probe_success{job="blackbox_tcp_gp_port"} == 0
+        for: 2m
+        labels:
+        severity: critical
+        service: Greenplum
+        annotations:
+        summary: "GP port is unavaliable on [[ $labels.dp_env ]]"
+        description: "Connection to database on [[ $labels.instance ]] is lost"
+        dashboard: "http://grafana.lmru.tech/d/sRH-5RoWk/greenplum"
+    - alert: gp-node-not-acsess-ssh
+        expr: probe_success{job="blackbox_tcp_gpprod"} == 0
+        for: 30s
+        labels:
+        severity: critical
+        service: Greenplum
+        annotations:
+        summary: "GP node not access via SSH at [[ $labels.instance ]]"
+        description: "SSH port inaccessible at [[ $labels.instance ]]"
+        dashboard: "http://grafana.lmru.tech/d/sRH-5RoWk/greenplum"
+    # GP PXF Availability alerts
+    - alert: pxf-port-prod
+        expr: probe_success{job="blackbox_pxf_prod"} == 0
+        for: 5m
+        labels:
+        severity: warning
+        service: PXF
+        annotations:
+        summary: "PXF has no access at [[ $labels.instance ]]"
+        description: "PXF port not accessible at [[ $labels.instance ]]"
+        dashboard: "http://grafana.lmru.tech/"
