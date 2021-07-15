@@ -23,14 +23,14 @@ gp_total_segment:
         usage: "GAUGE"
         description: "Count total segments"
 
-gp_total_primaris:
+gp_total_primaries:
   query: "SELECT count(1) FROM gp_segment_configuration where preferred_role='p' and content<>-1"
   metrics:
     - count:
         usage: "GAUGE"
         description: "Count total primaris"
 
-gp_mirror_as_primaris:
+gp_mirror_as_primaries:
   query: "SELECT count(1) FROM gp_segment_configuration where preferred_role='m' and role='p' and content<>-1"
   metrics:
     - count:
