@@ -21,6 +21,17 @@
       summary: "CPU waits are to high at [[ $labels.instance ]]"
       description: "CPU waits (iowait/irq/softirq/steal) are to high at [[ $labels.instance ]]"
       dashboard: http://grafana.lmru.tech/d/n3ntaHoWz/node-monitoring?var-node=[[ $labels.instance | reReplaceAll ":9100" "" ]]
+  - alert: gp-io-usage
+    expr: avg_over_time(irate(node_disk_io_time_seconds_total{instance=~"p-dtpl-sdw.*",job="consul" [1m]) [10m:1m]) > 90
+    for: 10m
+    labels:
+      severity: warning
+      service: Greenplum
+      dp_env: prod
+    annotations:
+      description: Greenplum prod IO usage is too high on [[ $instance ]]
+      summary: IO usage for [[ $device ]] on [[ $instance ]] is too high [[ $value ]]% (>90) for 10min
+      dashboard: http://grafana.lmru.tech/d/n3ntaHoWz/node-monitoring?var-node=[[ $labels.instance | reReplaceAll ":9100" "" ]]
   - alert: gp-fs-used-root
     expr: (100 - (node_filesystem_avail_bytes{mountpoint="/", fstype=~"ext.|xfs", instance=~"p-dtpl-[s,m]dw.*"} /
           node_filesystem_size_bytes{mountpoint="/", fstype=~"ext.|xfs", instance=~"p-dtpl-[s,m]dw.*"} * 100)) >= 90
