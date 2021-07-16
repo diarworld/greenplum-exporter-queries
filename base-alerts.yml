@@ -1,0 +1,59 @@
+---
+- alert: gp-cpu-unbalanced
+    expr: (max(1 - (avg_over_time (avg by (instance) (irate(node_cpu_seconds_total{instance=~"p-dtpl-sdw.*",mode="idle"}[1m])) [10m:1m]))) - min(1 - (avg_over_time (avg by (instance) (irate(node_cpu_seconds_total{instance=~"p-dtpl-sdw.*",mode="idle"}[1m])) [10m:1m])))) * 100 > 10
+    for: 30m
+    labels:
+      severity: warning
+      service: Greenplum
+      dp_env: prod
+    annotations:
+      description: Greenplum prod unbalanced cluster
+      summary: CPU load diff between cluster nodes = [[ $value ]]% (>10) for 30min
+      dashboard: http://grafana.lmru.tech/d/11HBcV3Zz/greenplum?orgId=1&var-instance=prod&var-component=All&var-bulletins_component=All&var-prefix=p
+ - alert: gp-cpu-waits
+    expr: (avg by(instance) (rate(node_cpu_seconds_total{mode=~"iowait|irq|softirq|steal", instance=~"p-dtpl-[s,m]dw.*"}[5m])) * 100) > 5
+    for: 5m
+    labels:
+      severity: high
+      service: Greenplum
+      dp_env: prod
+    annotations:
+      summary: "CPU waits are to high at [[ $labels.instance ]]"
+      description: "CPU waits (iowait/irq/softirq/steal) are to high at [[ $labels.instance ]]"
+      dashboard: http://grafana.lmru.tech/d/n3ntaHoWz/node-monitoring?var-node=[[ $labels.instance | reReplaceAll ":9100" "" ]]
+  - alert: gp-fs-used-root
+    expr: (100 - (node_filesystem_avail_bytes{mountpoint="/", fstype=~"ext.|xfs", instance=~"p-dtpl-[s,m]dw.*"} /
+          node_filesystem_size_bytes{mountpoint="/", fstype=~"ext.|xfs", instance=~"p-dtpl-[s,m]dw.*"} * 100)) >= 90
+    for: 1m
+    labels:
+      severity: high
+      service: Greenplum
+      dp_env: prod
+    annotations:
+      summary: "FS (/) using over 90% at [[ $labels.instance ]]"
+      description: "Root filesystem (/) using is over 90% at [[ $labels.instance ]] on [[ $value ]]"
+      dashboard: http://grafana.lmru.tech/d/n3ntaHoWz/node-monitoring?var-node=[[ $labels.instance | reReplaceAll ":9100" "" ]]  
+  - alert: gp-fs-used-data-70
+    expr: (100 - ((node_filesystem_avail_bytes{mountpoint=~"/data.*",  fstype=~"ext.|xfs", instance=~"p-dtpl-[s,m]dw.*"}
+          * 100) / node_filesystem_size_bytes{mountpoint=~"/data.*", fstype=~"ext.|xfs", instance=~"p-dtpl-[s,m]dw.*"})) >= 70
+    for: 5m
+    labels:
+      severity: warning
+      service: Greenplum
+      dp_env: prod
+    annotations:
+      summary: "FS (/data*) using over 70% [[ $labels.instance ]]"
+      description: "Filesystem (/data*) using is over 70% at [[ $labels.instance ]] on [[ $value ]]"
+      dashboard: http://grafana.lmru.tech/d/n3ntaHoWz/node-monitoring?var-node=[[ $labels.instance | reReplaceAll ":9100" "" ]]
+  - alert: gp-fs-used-data-90
+    expr: (100 - ((node_filesystem_avail_bytes{mountpoint=~"/data.*",  fstype=~"ext.|xfs", instance=~"p-dtpl-[s,m]dw.*"}
+          * 100) / node_filesystem_size_bytes{mountpoint=~"/data.*", fstype=~"ext.|xfs", instance=~"p-dtpl-[s,m]dw.*"})) >= 90
+    for: 5m
+    labels:
+      severity: critical
+      service: Greenplum
+      dp_env: prod
+    annotations:
+      summary: "FS (/data*) using over 90% [[ $labels.instance ]]"
+      description: "Filesystem (/data*) using is over 90% at [[ $labels.instance ]] on [[ $value ]]"
+      dashboard: http://grafana.lmru.tech/d/n3ntaHoWz/node-monitoring?var-node=[[ $labels.instance | reReplaceAll ":9100" "" ]]
