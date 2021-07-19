@@ -2,6 +2,8 @@
 
 ## Greenplum community meetup (in russian):
 https://cloud.yandex.ru/events/409
+Presentation is here (russian): 
+https://github.com/diarworld/greenplum-exporter-queries/blob/main/GreenplumObservability.pdf
 
 ### base-alerts.yml
 prometheus alert manager expressions for node-exporter greenplum specific alerts
