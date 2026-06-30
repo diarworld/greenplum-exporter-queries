@@ -1,0 +1,11 @@
+process_names:
+  - name: "{{.Matches.usename}}:{{.Matches.state}}"
+    comm:
+    - postgres
+    cmdline:
+    - ^postgres:\s(?P<pid>[0-9]+),\s(?P<usename>[0-9A-Za-z\-_]+)\s(?P<db>[adb]+)\s(?P<connaddr>[0-9\.()]+)\s(?P<con>con[0-9]+)\s(?P<seg>seg[0-9]+)\s?(?P<cmd>[cmd[0-9]+)?\s?(?P<slice>[slice[0-9]+)?\s(?P<state>[A-Za-z]+[\s]?[[A-Za-z]+]?[\s]?[[A-Za-z]+]?).*$
+  - name: "WAL {{.Matches.process}}"
+    comm:
+    - postgres
+    cmdline:
+    - ^postgres:\s(?P<pid>[0-9]+),\swal\s(?P<process>[[:alpha:]]+)\sprocess.+
